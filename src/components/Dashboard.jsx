@@ -6,20 +6,32 @@ import Table from "react-bootstrap/Table";
 import Button from "react-bootstrap/Button";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { saveAllBlogs, deleteBlog, toggleBlog } from "../Redux/BlogSlice";
 
 function Dashboard() {
+  let dispatch = useDispatch();
+  let blogs = useSelector(state => state.blogs);
   let navigate = useNavigate();
-  let [blogs, setBlog] = useState([]);
+  // let [blogs, setBlog] = useState([]);
   let getBlogsData = async () => {
     try {
       let res = await axios.get(API_URL);
-      setBlog(res.data);
+      if (res.status === 200) {
+        // setBlog(res.data);
+        dispatch(saveAllBlogs(res.data)); //this will call the functions in the reducers which is inside the slice and data can be get in actions parameter
+      }
     } catch (error) {}
   };
-  let toggleBlog = async (e) => {
+  let toggleBlogById = async (e) => {
     try {
-      e.status = !e.status;
-      let res = await axios.put(`${API_URL}/${e.id}`, e);
+      // e.status = !e.status;
+      dispatch(toggleBlog(e));
+      console.log(e);
+      let res = await axios.put(`${API_URL}/${e.id}`, {
+        ...e,
+        status:!e.status
+      });
       if (res.status === 200) {
         toast.success("Blog Status Changed");
         getBlogsData();
@@ -31,6 +43,7 @@ function Dashboard() {
   }
   let handleDelete = async (id) => {
     try {
+      dispatch(deleteBlog(id));
       let res = await axios.delete(`${API_URL}/${id}`);
       if (res.status === 200) {
         toast.success("Blog Deleted")
@@ -67,7 +80,7 @@ function Dashboard() {
                 <td><img src={e.img} alt={e.title} style={{width:"50px"}}/></td>
                 <td width={"50%"}>{e.desc}</td>
                 <td> <label className="switch">
-                  <input type="checkbox" defaultChecked={e.status} onChange={()=>toggleBlog(e)}/>
+                  <input type="checkbox" defaultChecked={e.status} onChange={()=>toggleBlogById(e)}/>
                   <span className="slider round"></span>
                 </label></td>
                 <td><Button variant="info" onClick={() => {navigate(`/edit/${e.id}`)}}>Edit</Button>
